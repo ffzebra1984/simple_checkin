@@ -2,27 +2,38 @@ name: Build Flutter APK
 on:
   push:
     branches: [ main ]
+  workflow_dispatch: # 增加手动打包按钮，Actions页面可以点Run workflow
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
+      - name: Setup Flutter stable
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'
+          channel: 'stable'
 
-      - name: Install dependencies
+      - name: Create fresh flutter project (云端自动生成android工程)
+        run: flutter create simple_checkin
+
+      - name: Copy our code into new project
+        run: |
+          cp pubspec.yaml simple_checkin/
+          cp lib/main.dart simple_checkin/lib/main.dart
+
+      - name: Enter project folder
+        working-directory: ./simple_checkin
         run: flutter pub get
 
-      - name: Build APK
+      - name: Build release APK
+        working-directory: ./simple_checkin
         run: flutter build apk --release
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: simple_checkin/build/app/outputs/flutter-apk/app-release.apk
